@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: frontend
+  labels:
+    app: frontend
+data:
+  nginx.conf: |
+    server {
+        listen 8080;
+        server_name _;
+        
+        # Serve static files
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Handle SPA routing
+        location / {
+          try_files $uri $uri/ /index.html;
+        }
+
+        location /product-management {
+          try_files $uri $uri/ /index.html;
+        }
+
+        location /css {
+          root /usr/share/nginx/html;
+        }
+
+        location /js {
+          root /usr/share/nginx/html;
+        }
+        
+        # Health check endpoint for Kubernetes probes
+        location /health {
+          return 200 '{"status":"UP"}';
+          add_header Content-Type application/json;
+        }
+    }
