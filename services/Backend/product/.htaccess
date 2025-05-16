@@ -1,0 +1,10 @@
+RewriteEngine On
+RewriteBase /
+
+# Handle health check directly
+RewriteRule ^health$ - [L]
+
+# Rewrite all other requests to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # MySQL Database for Product Service
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=product_db
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Product Service
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      - DB_HOST=mysql
+      - DB_DATABASE=product_db
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+      - CATEGORY_SERVICE_URL=http://mockserver:1080
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./:/var/www/html
+
+  # Mock Server for Category Service API
+  mockserver:
+    image: mockserver/mockserver:latest
+    ports:
+      - "1080:1080"
+    environment:
+      - MOCKSERVER_INITIALIZATION_JSON_PATH=/config/initializerJson.json
+    volumes:
+      - ./mockserver:/config
+
+volumes:
+  mysql-data:

@@ -1,0 +1,19 @@
+{
+    "httpRequest": {
+      "path": "/api/products/.*",
+      "method": "GET"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": ["application/json"]
+      },
+      "body": {
+        "id": 1,
+        "name": "Test Product",
+        "description": "A test product for review service",
+        "price": 99.99,
+        "category_id": "1"
+      }
+    }
+  }
