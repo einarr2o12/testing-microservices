@@ -1,238 +1,176 @@
-# Cloud-Native Microservices Application
+# Microservices Architecture with Vue.js Frontend
 
-This project demonstrates a cloud-native microservices architecture with three distinct services deployed on Kubernetes. Each service uses a different programming language and database technology to showcase polyglot programming and persistence. Just only for educational purpose. That's why I add some creditrials in the code. 
-### Never put creditrials in the code and never push to the github.
+## Overview
 
-## Architecture Overview
+This repository contains a microservices-based application with a Vue.js frontend and multiple backend services deployed in a Kubernetes environment. The architecture focuses on a modular design where services can be developed, deployed, and scaled independently.
 
-![Microservices Architecture](architecture-diagram.svg)
+![Architecture Diagram](/image-01.png)
 
-The application consists of three microservices:
+## Excelidraw Link
 
-1. **Category Service** (Node.js + MongoDB)
-   - Manages product categories
-   - Uses document-based storage
-   - Exposes RESTful API endpoints
-   - Implemented with Express.js
+[Architecture Diagram](https://link.excalidraw.com/readonly/g5iAivNBVTKzOqsIadPd
 
-2. **Product Service** (PHP + MySQL)
-   - Manages product information
-   - Uses relational data storage
-   - Communicates with Category service
-   - Exposes RESTful API endpoints
+## Architecture Components
 
-3. **Review Service** (Python + PostgreSQL)
-   - Manages product reviews
-   - Uses PostgreSQL for advanced relational features
-   - Communicates with Product service
-   - Exposes RESTful API endpoints with Flask
+### Frontend
 
-### Service Relationships
+- **Vue.js Application**: Single-page application that interacts with backend services through API gateways
+- **Load Balancer/API Gateway**: Routes requests to appropriate services
 
-- Category Service has a one-to-many relationship with Product Service
-- Product Service has a one-to-many relationship with Review Service
-- Direct communication between Category and Review Services is blocked by network policies
+### Backend Services
 
-## Technology Stack
+#### Category Service
 
-### Programming Languages
-- Node.js for Category Service
-- PHP for Product Service
-- Python for Review Service
+The Category Service handles all category-related operations:
 
-### Databases (Polyglot Persistence)
-- MongoDB for document-based storage (Category Service)
-- MySQL for relational data management (Product Service)
-- PostgreSQL for advanced relational features (Review Service)
+- **API Endpoints**: RESTful endpoints for CRUD operations on categories
+- **Data Structure**: Categories with attributes like name, description, and relationships
+- **Database**: Persistent volume for storing category data
+- **Kubernetes Deployment**: Containerized service with defined replicas for high availability
+
+#### Product Service
+
+The Product Service manages product-related operations:
+
+- **API Endpoints**: RESTful endpoints for CRUD operations on products
+- **Data Structure**: Products with attributes including name, price, inventory status, and category relationships
+- **Database**: Persistent volume for storing product data
+- **Kubernetes Deployment**: Containerized service with defined replicas for high availability
 
 ### Infrastructure
-- Kubernetes for orchestration
-- StatefulSets for databases
-- Deployments for stateless services
-- Network Policies for enforcing communication rules
-- Kubernetes Services for service discovery
 
-## Project Structure
+- **Ingress Controller**: Manages external access to services
+- **Service Discovery**: Kubernetes services for internal communication
+- **Persistent Storage**: Volume claims for database persistence
 
-```
-├── category-service/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── server.js
-├── product-service/
-│   ├── Dockerfile
-│   ├── composer.json
-│   └── index.php
-├── review-service/
-│   ├── Dockerfile
-│   ├── app.py
-│   ├── models.py
-│   └── requirements.txt
-└── kubernetes/
-    ├── category/
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   └── network-policy.yaml
-    ├── product/
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   └── network-policy.yaml
-    ├── review/
-    │   ├── deployment.yaml
-    │   ├── service.yaml
-    │   └── network-policy.yaml
-    └── databases/
-        ├── mongodb-statefulset.yaml
-        ├── mysql-statefulset.yaml
-        └── postgres-statefulset.yaml
-```
+## Deployment
 
-## API Endpoints
+The application is deployed on Kubernetes with the following configuration:
 
-### Category Service (Node.js)
-- `GET /api/categories` - Get all categories
-- `GET /api/categories/:id` - Get a specific category
-- `POST /api/categories` - Create a new category
-- `PUT /api/categories/:id` - Update a category
-- `DELETE /api/categories/:id` - Delete a category
+1. Each service is deployed as a separate pod with its own configuration
+2. Services communicate via internal Kubernetes networking
+3. Ingress routes external traffic to appropriate services
+4. Persistent volumes ensure data durability
 
-### Product Service (PHP)
-- `GET /api/products` - Get all products
-- `GET /api/products/:id` - Get a specific product
-- `POST /api/products` - Create a new product
-- `PUT /api/products/:id` - Update a product
-- `DELETE /api/products/:id` - Delete a product
-- `GET /api/products/category/:categoryId` - Get products by category
+## Service Communication
 
-### Review Service (Python)
-- `GET /api/reviews` - Get all reviews
-- `GET /api/reviews/:id` - Get a specific review
-- `POST /api/reviews` - Create a new review
-- `PUT /api/reviews/:id` - Update a review
-- `DELETE /api/reviews/:id` - Delete a review
-- `GET /api/products/:productId/reviews` - Get reviews for a product
+- **Internal Communication**: Services communicate directly through Kubernetes service discovery
+- **External Communication**: External requests are routed through the Ingress controller to appropriate services
 
-## Cloud-Native Features
-
-1. **Microservices Architecture**
-   - Each service is independently deployable
-   - Services communicate via REST APIs
-   - Clear separation of concerns
-
-2. **Polyglot Programming**
-   - Node.js, PHP, and Python showcase different programming models
-   - Each language is chosen for its strengths
-
-3. **Polyglot Persistence**
-   - MongoDB for document storage
-   - MySQL for traditional relational data
-   - PostgreSQL for advanced relational features
-
-4. **Kubernetes Deployment**
-   - Stateless services use Deployments
-   - Stateful databases use StatefulSets
-   - Services for internal DNS resolution
-   - Network Policies to enforce access rules
-
-5. **Resilience Patterns**
-   - Health checks for all services
-   - Resource limits and requests
-   - Replica configuration for high availability
-
-## Deployment Instructions
+## Development
 
 ### Prerequisites
-- Kubernetes cluster (minikube, kind, or cloud provider)
-- kubectl configured to access your cluster
-- Docker for building images
 
-### Building the Images
+- Docker
+- Kubernetes cluster (local or cloud-based)
+- Node.js and npm
+- Vue.js CLI
 
-```bash
-# Build Category Service
-cd category-service
-docker build -t category-service:latest .
+### Setup Instructions
 
-# Build Product Service
-cd ../product-service
-docker build -t product-service:latest .
+1. Clone the repository
+   ```bash
+   git clone https://github.com/einarr2o12/testing-microservices
+   cd your-repo
+   ```
 
-# Build Review Service
-cd ../review-service
-docker build -t review-service:latest .
-```
+2. Build and deploy services
+   ```bash
+   # Build and push Docker images for each services
+   docker buildx build --platform linux/amd64 -t your-docker-hub-url .
+   
+   # Deploy to Kubernetes for each services.
+   kubectl apply -f .
+   ```
 
-### Deploying to Kubernetes
+3. Access the application
+   ```
+   # Get the Ingress IP
+   kubectl get ingress -n namespace
+   ```
 
-1. First, deploy the databases:
+4. Access the Vue.js frontend
+   ```
+   # Get all in namespace
+   kubectl get all -n namespace -o wide
+   ```
 
-```bash
-kubectl apply -f kubernetes/databases/mongodb-statefulset.yaml
-kubectl apply -f kubernetes/databases/mysql-statefulset.yaml
-kubectl apply -f kubernetes/databases/postgres-statefulset.yaml
-```
+5. coming soon...
 
-2. Then, deploy the services:
+## Load Testing
+Coming soon...
 
-```bash
-# Category Service
-kubectl apply -f kubernetes/category/deployment.yaml
-kubectl apply -f kubernetes/category/service.yaml
+## Configuration
+Configuration for each services is managed through environment variables and Kubernetes ConfigMaps.
 
-# Product Service
-kubectl apply -f kubernetes/product/deployment.yaml
-kubectl apply -f kubernetes/product/service.yaml
+## Service Details
 
-# Review Service
-kubectl apply -f kubernetes/review/deployment.yaml
-kubectl apply -f kubernetes/review/service.yaml
-```
+### Category Service
 
-3. Finally, apply the network policies:
+The Category Service provides a RESTful API for managing product categories with the following endpoints:
 
-```bash
-kubectl apply -f kubernetes/category/network-policy.yaml
-kubectl apply -f kubernetes/product/network-policy.yaml
-kubectl apply -f kubernetes/review/network-policy.yaml
-```
+- `GET /categories` - List all categories
+- `GET /categories/:id` - Get a specific category
+- `POST /categories` - Create a new category
+- `PUT /categories/:id` - Update a category
+- `DELETE /categories/:id` - Delete a category
 
-### Verifying the Deployment
+Configuration is managed through environment variables and Kubernetes ConfigMaps.
 
-Check if all pods are running:
+### Product Service
 
-```bash
-kubectl get pods
-```
+The Product Service provides a RESTful API for managing products with the following endpoints:
 
-Check the services:
+- `GET /products` - List all products
+- `GET /products/:id` - Get a specific product
+- `POST /products` - Create a new product
+- `PUT /products/:id` - Update a product
+- `DELETE /products/:id` - Delete a product
+- `GET /products/category/:categoryId` - Get products by category
 
-```bash
-kubectl get services
-```
+Products are linked to categories through category IDs, creating a relationship between the two services.
 
-## Testing the Application
+## API Documentation
 
-You can test the APIs using port-forwarding:
+Coming soon...
 
-```bash
-# Forward Category Service
-kubectl port-forward svc/category-service 3000:3000
+## Scaling and High Availability
 
-# Forward Product Service
-kubectl port-forward svc/product-service 8080:80
+Services are configured for horizontal scaling with:
 
-# Forward Review Service
-kubectl port-forward svc/review-service 5000:5000
-```
+- Multiple replicas for each service
+- Load balancing through Kubernetes services
+- Readiness and liveness probes for health monitoring
 
-Then, use tools like curl or Postman to interact with the APIs.
+## Monitoring
 
-## Educational Goals
+The architecture includes monitoring through:
 
-This project demonstrates:
-- Cloud-native principles
-- Polyglot programming
-- Microservice communication patterns
-- Database integration strategies
-- Kubernetes deployment techniques
-- Network security with Kubernetes
+Coming soon...
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Service connectivity issues**: Check service DNS names and port configurations
+2. **Database connection failures**: Verify persistent volume claims are correctly bound
+3. **Frontend not loading**: Check ingress configuration and frontend service status
+
+## Future Improvements
+
+Planned enhancements for the architecture:
+
+1. Add logging and monitoring for better observability
+2. Add kong gateway for API management
+3. Add request and response logging for each services
+4. Implement CI/CD pipeline for automated deployment
+5. Add custom kong plugins for API gateway
+6. coming soon...
+
+## Contributing
+
+Coming soon...
+
+## License
+
+coming soon...
