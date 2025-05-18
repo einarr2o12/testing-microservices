@@ -6,9 +6,9 @@ metadata:
   labels:
     app: frontend
 data:
-  VUE_APP_CATEGORY_SERVICE_URL: "http://157.230.195.62/api/categories"
-  VUE_APP_PRODUCT_SERVICE_URL: "http://157.230.195.62/api/products"
-  VUE_APP_REVIEW_SERVICE_URL: "http://157.230.195.62/api/reviews"
+  VUE_APP_CATEGORY_SERVICE_URL: "http://188.166.198.8/api/categories"
+  VUE_APP_PRODUCT_SERVICE_URL: "http://188.166.198.8/api/products"
+  VUE_APP_REVIEW_SERVICE_URL: "http://188.166.198.8/api/reviews"
   
   # Configuration flags
   VUE_APP_USE_MOCK: "false"
