@@ -1,1 +1,2 @@
 services/Frontend/vuejs/node_modules
+kubernetes/kong/tls*
