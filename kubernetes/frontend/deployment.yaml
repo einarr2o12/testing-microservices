@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: 1911997/vue-product:v1.0.15
+        image: 1911997/vue-product:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -51,74 +51,3 @@ spec:
       - name: nginx-config-volume
         configMap:
           name: nginx-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: frontend-service
-  namespace: frontend
-spec:
-  selector:
-    app: frontend
-  ports:
-  - port: 8080
-    targetPort: 8080
-  type: LoadBalancer
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: frontend-ingress
-  namespace: frontend
-  annotations:
-    kubernetes.io/ingress.class: nginx
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 8080
-      - path: /product-management
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 8080
-      - path: /css
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 8080
-      - path: /js
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend-service
-            port:
-              number: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  namespace: frontend
-  name: frontend-network-policy
-spec:
-  podSelector:
-    matchLabels:
-      app: frontend
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - {}
-  
-  egress:
-  - {}

@@ -6,9 +6,10 @@ metadata:
   labels:
     app: frontend
 data:
-  VUE_APP_CATEGORY_SERVICE_URL: "http://artisantech.site/api/categories"
-  VUE_APP_PRODUCT_SERVICE_URL: "http://artisantech.site/api/products"
-  VUE_APP_REVIEW_SERVICE_URL: "http://artisantech.site/api/reviews"
+  # Replace with the actual URL
+  VUE_APP_CATEGORY_SERVICE_URL: "http://146.190.203.128:8000/category"
+  VUE_APP_PRODUCT_SERVICE_URL: "http://146.190.203.128:8000/product"
+  VUE_APP_REVIEW_SERVICE_URL: "http://146.190.203.128:8000/review"
   
   # Configuration flags
   VUE_APP_USE_MOCK: "false"
