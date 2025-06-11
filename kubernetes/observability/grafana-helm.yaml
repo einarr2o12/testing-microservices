@@ -1,0 +1,68 @@
+# Grafana Configuration for Infrastructure Monitoring
+
+# Admin credentials
+adminUser: admin
+adminPassword: admin123
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3000
+
+# Persistence
+persistence:
+  enabled: true
+  size: 2Gi
+
+# Resource limits
+resources:
+  limits:
+    cpu: 300m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Data sources configuration
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local:9090
+        access: proxy
+        isDefault: true
+        editable: true
+
+# Grafana configuration
+grafana.ini:
+  server:
+    root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+    serve_from_sub_path: false
+  
+  security:
+    allow_embedding: true
+    cookie_secure: false
+  
+  auth.anonymous:
+    enabled: false
+  
+  log:
+    mode: console
+    level: info
+
+# Environment variables
+env:
+  GF_SECURITY_ADMIN_USER: admin
+  GF_SECURITY_ADMIN_PASSWORD: admin123
+
+# Disable admin user secret (use env vars instead)
+admin:
+  existingSecret: ""
+
+# Security context
+securityContext:
+  runAsUser: 472
+  runAsGroup: 472
+  fsGroup: 472

@@ -23,8 +23,8 @@ env:
 
   # Admin and Manager
   admin_listen: 0.0.0.0:8001
-  admin_gui_api_url: http://137.184.251.85:8001
-  admin_api_uri: http://137.184.251.85:8001
+  admin_gui_api_url: http://104.248.97.164:8001
+  admin_api_uri: http://104.248.97.164:8001
 
 proxy:
   enabled: true
@@ -62,12 +62,9 @@ cluster:
     servicePort: 8005
     containerPort: 8005
 
-opentelemetry:
-  enabled: true
-  collector:
-    enabled: true
-    host: opentelemetry-collector.opentelemetry.svc.cluster.local
-    port: 4317
+plugins:
+  configMaps: []
+  secrets: []
 
 postgresql:
   enabled: true

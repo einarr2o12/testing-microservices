@@ -1,0 +1,95 @@
+clusterName: "opensearch-cluster"
+nodeGroup: "master"
+
+# Single node setup for small cluster
+singleNode: true
+
+# Number of master nodes
+replicas: 1
+
+# Resource configuration for 2 vCPU, 4GB RAM nodes
+resources:
+  requests:
+    cpu: 256m
+    memory: 1Gi
+  limits:
+    cpu: 512m
+    memory: 2Gi
+
+# JVM heap size (50% of memory limit)
+opensearchJavaOpts: "-Xmx512m -Xms512m"
+
+# Persistence
+persistence:
+  enabled: true
+  enableInitChown: true
+  storageClass: "do-block-storage"  # DigitalOcean storage class
+  size: 20Gi
+  annotations: {}
+  
+# Security configuration
+config:
+  opensearch.yml: |
+    cluster.name: opensearch-cluster
+    network.host: 0.0.0.0
+    
+    # Discovery type for single node - DO NOT set cluster.initial_master_nodes
+    discovery.type: single-node
+    
+    # Disable security plugin
+    plugins.security.disabled: true
+    
+    # Enable CORS for API access
+    http.cors.enabled: true
+    http.cors.allow-origin: "*"
+    http.cors.allow-headers: "X-Requested-With,Content-Type,Content-Length,Authorization"
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 9200
+  transportPort: 9300
+
+# Extra environment variables
+extraEnvs:
+  - name: DISABLE_INSTALL_DEMO_CONFIG
+    value: "true"
+  - name: DISABLE_SECURITY_PLUGIN
+    value: "true"
+
+# Protocol for readiness probe
+protocol: http
+
+# HTTP port
+httpPort: 9200
+
+# Transport port
+transportPort: 9300
+
+# Volume claim templates
+volumeClaimTemplate:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: "do-block-storage"
+
+# Security context
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  runAsNonRoot: true
+  runAsUser: 1000
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+
+# System settings
+sysctlInit:
+  enabled: true
+
+# Update strategy
+updateStrategy: RollingUpdate

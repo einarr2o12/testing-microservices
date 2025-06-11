@@ -1,0 +1,61 @@
+opensearchHosts: "http://opensearch-cluster-master:9200"
+
+# Number of replicas
+replicaCount: 1
+
+# Image configuration
+image:
+  repository: "opensearchproject/opensearch-dashboards"
+  # Use the same version as your OpenSearch
+  tag: "3.0.0"
+  pullPolicy: "IfNotPresent"
+
+# Resources - keeping it light for your 2 vCPU, 4GB RAM nodes
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Service configuration
+service:
+  type: LoadBalancer
+  port: 5601
+
+# OpenSearch Dashboards configuration
+config:
+  opensearch_dashboards.yml: |
+    server.name: opensearch-dashboards
+    server.host: "0.0.0.0"
+    
+    # Connection to OpenSearch
+    opensearch.hosts: ["http://opensearch-cluster-master:9200"]
+    
+    # Disable SSL and authentication
+    server.ssl.enabled: false
+    opensearch.ssl.verificationMode: none
+    opensearch.username: ""
+    opensearch.password: ""
+    opensearch.requestHeadersWhitelist: []
+
+# Persistence (optional - for saved objects, visualizations, etc.)
+persistence:
+  enabled: false
+
+ingress:
+  enabled: false
+
+# Environment variables
+extraEnvs:
+  - name: "NODE_OPTIONS"
+    value: "--max_old_space_size=512"
+  - name: "OPENSEARCH_HOSTS"
+    value: "http://opensearch-cluster-master:9200"
+  - name: "DISABLE_SECURITY_DASHBOARDS_PLUGIN"
+    value: "true"
+
+# Update strategy
+updateStrategy:
+  type: "Recreate"

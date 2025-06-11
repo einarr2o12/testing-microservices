@@ -1,0 +1,73 @@
+# Minimal Prometheus Configuration with Helm
+# Only Prometheus server, no duplicate collectors
+
+# Disable all extra components (we have OpenTelemetry for metrics collection)
+alertmanager:
+  enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+  
+kube-state-metrics:
+  enabled: false
+  
+prometheus-pushgateway:
+  enabled: false
+
+# Only Prometheus server
+server:
+  # Enable persistence
+  persistentVolume:
+    enabled: true
+    size: 5Gi
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  
+  # Service configuration
+  service:
+    type: LoadBalancer
+    servicePort: 9090
+
+# Global configuration
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+# Scrape configuration
+serverFiles:
+  prometheus.yml:
+    scrape_configs:
+      # OpenTelemetry Collector metrics from DaemonSet
+      - job_name: 'otel-collector-infrastructure'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - opentelemetry
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_ip, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            target_label: __address__
+            regex: (.+);(.+)
+            replacement: ${1}:${2}
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+      
+      # Prometheus self-monitoring
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
