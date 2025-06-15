@@ -23,7 +23,7 @@ opensearchJavaOpts: "-Xmx512m -Xms512m"
 persistence:
   enabled: true
   enableInitChown: true
-  storageClass: "do-block-storage"  # DigitalOcean storage class
+  storageClass: "do-block-storage"
   size: 20Gi
   annotations: {}
   

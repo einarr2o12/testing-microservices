@@ -16,23 +16,22 @@ prometheus-pushgateway:
 
 # Only Prometheus server
 server:
-  # Enable persistence
+  # Disable persistence for resource constraints
   persistentVolume:
-    enabled: true
-    size: 5Gi
+    enabled: false
   
-  # Resource limits
+  # Minimal resource limits
   resources:
     limits:
-      cpu: 500m
-      memory: 1Gi
+      cpu: 100m
+      memory: 128Mi
     requests:
-      cpu: 200m
-      memory: 512Mi
+      cpu: 50m
+      memory: 64Mi
   
   # Service configuration
   service:
-    type: LoadBalancer
+    type: ClusterIP
     servicePort: 9090
 
 # Global configuration
@@ -50,7 +49,7 @@ serverFiles:
           - role: pod
             namespaces:
               names:
-                - opentelemetry
+                - observability
         relabel_configs:
           - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
             action: keep
@@ -66,6 +65,13 @@ serverFiles:
           - source_labels: [__meta_kubernetes_pod_name]
             action: replace
             target_label: kubernetes_pod_name
+      
+      # Kong Gateway metrics
+      - job_name: 'kong-gateway'
+        static_configs:
+          - targets: ['kong-kong-admin.kong.svc.cluster.local:8001']
+        metrics_path: '/metrics'
+        scrape_interval: 15s
       
       # Prometheus self-monitoring
       - job_name: 'prometheus'

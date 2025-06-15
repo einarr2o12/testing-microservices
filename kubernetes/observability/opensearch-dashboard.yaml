@@ -21,7 +21,7 @@ resources:
 
 # Service configuration
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 5601
 
 # OpenSearch Dashboards configuration

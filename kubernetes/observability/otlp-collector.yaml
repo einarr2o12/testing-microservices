@@ -39,11 +39,16 @@ config:
       send_batch_size: 1024
 
   exporters:
+    # Export traces to Jaeger via OTLP
+    otlp/jaeger:
+      endpoint: jaeger-collector.observability.svc.cluster.local:4317
+      tls:
+        insecure: true
+    
     # Export logs to OpenSearch (using elasticsearch exporter)
     elasticsearch:
-      endpoints: ["http://opensearch-cluster-master.opensearch.svc.cluster.local:9200"]
+      endpoints: ["http://opensearch-cluster-master.observability.svc.cluster.local:9200"]
       logs_index: "otel-logs"
-      traces_index: "otel-traces"
     
     # Debug exporter to see what's being received
     debug:
@@ -59,7 +64,7 @@ config:
       traces:
         receivers: [otlp]
         processors: [memory_limiter, batch]
-        exporters: [elasticsearch, debug]
+        exporters: [otlp/jaeger, debug]
 
 # Pod annotations for scraping
 podAnnotations:

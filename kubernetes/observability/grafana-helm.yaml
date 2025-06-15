@@ -1,8 +1,8 @@
 # Grafana Configuration for Infrastructure Monitoring
 
-# Admin credentials
+# Admin credentials  
 adminUser: admin
-adminPassword: admin123
+adminPassword: "grafana-admin"
 
 # Service configuration
 service:
@@ -30,7 +30,7 @@ datasources:
     datasources:
       - name: Prometheus
         type: prometheus
-        url: http://prometheus-server.monitoring.svc.cluster.local:9090
+        url: http://prometheus-server.observability.svc.cluster.local:9090
         access: proxy
         isDefault: true
         editable: true
@@ -55,7 +55,7 @@ grafana.ini:
 # Environment variables
 env:
   GF_SECURITY_ADMIN_USER: admin
-  GF_SECURITY_ADMIN_PASSWORD: admin123
+  GF_SECURITY_ADMIN_PASSWORD: "grafana-admin"
 
 # Disable admin user secret (use env vars instead)
 admin:
