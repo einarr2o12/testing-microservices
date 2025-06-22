@@ -14,7 +14,7 @@ data:
   MONGODB_HOST: "mongodb.category-service.svc.cluster.local"
   MONGODB_PORT: "27017"
   MONGODB_DATABASE: "category-db"
-  MONGODB_URI: "mongodb://mongodb:27017/category-db"
+  MONGODB_URI: "mongodb://mongodb.category-service.svc.cluster.local:27017/category-db"
   
   # Additional configuration options
   ENABLE_METRICS: "true"
