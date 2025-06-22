@@ -23,8 +23,8 @@ env:
 
   # Admin and Manager
   admin_listen: 0.0.0.0:8001
-  admin_gui_api_url: http://kong-kong-admin.kong.svc.cluster.local:8001
-  admin_api_uri: http://kong-kong-admin.kong.svc.cluster.local:8001
+  admin_gui_api_url: http://157.230.192.44:8001
+  admin_api_uri: http://157.230.192.44:8001
 
 proxy:
   enabled: true
