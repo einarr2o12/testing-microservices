@@ -8,12 +8,11 @@ on:
     branches:
       - main
       - develop
+    tags:
+      - 'review-v*'
   pull_request:
     paths:
       - 'services/Backend/review/**'
-  push:
-    tags:
-      - 'review-v*'
 
 env:
   REGISTRY: docker.io

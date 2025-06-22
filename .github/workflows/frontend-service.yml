@@ -8,12 +8,11 @@ on:
     branches:
       - main
       - develop
+    tags:
+      - 'frontend-v*'
   pull_request:
     paths:
       - 'services/Frontend/vuejs/**'
-  push:
-    tags:
-      - 'frontend-v*'
 
 env:
   REGISTRY: docker.io

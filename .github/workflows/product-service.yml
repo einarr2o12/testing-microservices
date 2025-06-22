@@ -8,12 +8,11 @@ on:
     branches:
       - main
       - develop
+    tags:
+      - 'product-v*'
   pull_request:
     paths:
       - 'services/Backend/product/**'
-  push:
-    tags:
-      - 'product-v*'
 
 env:
   REGISTRY: docker.io
