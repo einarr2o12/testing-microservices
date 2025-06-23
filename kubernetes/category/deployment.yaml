@@ -23,9 +23,15 @@ spec:
         - containerPort: 3000
         env:
         - name: MONGODB_URI
-          value: "mongodb://mongodb:27017/category-db"
+          valueFrom:
+            configMapKeyRef:
+              name: category-config
+              key: MONGODB_URI
         - name: PORT
-          value: "3000"
+          valueFrom:
+            configMapKeyRef:
+              name: category-config
+              key: PORT
         resources:
           limits:
             cpu: "0.5"
