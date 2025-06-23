@@ -13,7 +13,7 @@ spec:
     path: kubernetes/product
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: product-service
   syncPolicy:
     automated:
       prune: true

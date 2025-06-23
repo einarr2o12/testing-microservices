@@ -13,7 +13,7 @@ spec:
     path: kubernetes/frontend
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: frontend
   syncPolicy:
     automated:
       prune: true

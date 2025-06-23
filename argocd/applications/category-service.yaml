@@ -13,7 +13,7 @@ spec:
     path: kubernetes/category
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: category-service
   syncPolicy:
     automated:
       prune: true
