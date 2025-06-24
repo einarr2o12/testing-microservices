@@ -14,7 +14,8 @@ curl -X POST http://146.190.203.203:8001/services \
 # # Create the Category Route
 curl -X POST http://146.190.203.203:8001/services/category-service/routes \
   --data "name=category-service" \
-  --data "paths[]=/category"
+  --data "paths[]=/category" \
+  --data "strip_path=false"
 
 # Create the Product Service
 curl -X POST http://146.190.203.203:8001/services \
@@ -24,7 +25,8 @@ curl -X POST http://146.190.203.203:8001/services \
 # Create the Product Route
 curl -X POST http://146.190.203.203:8001/services/product-service/routes \
   --data "name=product-service" \
-  --data "paths[]=/product"
+  --data "paths[]=/product" \
+  --data "strip_path=false"
 
 # Create the frontend Service
 curl -X POST http://146.190.203.203:8001/services \
@@ -34,7 +36,8 @@ curl -X POST http://146.190.203.203:8001/services \
 # Create the Review Route
 curl -X POST http://146.190.203.203:8001/services/review-service/routes \
   --data "name=review-service" \
-  --data "paths[]=/review"
+  --data "paths[]=/review" \
+  --data "strip_path=false"
 
 # Create the frontend Service
 curl -X POST http://146.190.203.203:8001/services \

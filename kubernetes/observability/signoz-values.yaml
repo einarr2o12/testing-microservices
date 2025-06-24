@@ -1,0 +1,204 @@
+# SigNoz Configuration Values
+# Complete observability stack with ClickHouse
+
+# Global configuration
+global:
+  storageClass: "do-block-storage"
+
+# ClickHouse Database Configuration
+clickhouse:
+  enabled: true
+  image:
+    repository: clickhouse/clickhouse-server
+    tag: "23.7"
+  
+  # Storage configuration
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "do-block-storage"
+  
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+  
+  # Configuration settings
+  config:
+    # Increase memory limits for better performance
+    max_memory_usage: "1000000000"
+    max_memory_usage_for_user: "1000000000"
+    
+    # Logging configuration
+    logger:
+      level: warning
+      console: true
+    
+    # Network settings
+    listen_host: "0.0.0.0"
+    http_port: "8123"
+    tcp_port: "9000"
+    interserver_http_port: "9009"
+
+# SigNoz Query Service Configuration
+queryService:
+  enabled: true
+  image:
+    repository: signoz/query-service
+    tag: "0.35.0"
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: "8080"
+  
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Environment variables
+  env:
+    - name: STORAGE
+      value: "clickhouse"
+    - name: GODEBUG
+      value: "netdns=go"
+    - name: TELEMETRY_ENABLED
+      value: "true"
+    - name: DEPLOYMENT_TYPE
+      value: "kubernetes"
+
+# SigNoz Frontend Configuration
+frontend:
+  enabled: true
+  image:
+    repository: signoz/frontend
+    tag: "0.35.0"
+  
+  # Service configuration
+  service:
+    type: LoadBalancer
+    port: "3301"
+    targetPort: "3301"
+  
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 200m
+      memory: 512Mi
+
+# SigNoz OTel Collector Configuration
+otelCollector:
+  enabled: true
+  image:
+    repository: signoz/signoz-otel-collector
+    tag: "0.88.11"
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    ports:
+      otlp-grpc: "4317"
+      otlp-http: "4318"
+      metrics: "8889"
+  
+  # Resource allocation
+  resources:
+    requests:
+      cpu: 200m
+      memory: 400Mi
+    limits:
+      cpu: 500m
+      memory: 800Mi
+  
+  # OTEL Collector configuration
+  config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+      prometheus:
+        config:
+          scrape_configs:
+            - job_name: 'otel-collector'
+              scrape_interval: "30s"
+              static_configs:
+                - targets: ['0.0.0.0:8889']
+    
+    processors:
+      batch:
+        timeout: "5s"
+        send_batch_size: "1024"
+      memory_limiter:
+        limit_mib: "300"
+        spike_limit_mib: "100"
+      resource:
+        attributes:
+          - key: cluster.name
+            value: "k8s-microservices"
+            action: insert
+          - key: environment
+            value: "demo"
+            action: insert
+    
+    exporters:
+      clickhouse:
+        endpoint: tcp://signoz-clickhouse:9000
+        database: signoz_traces
+        username: default
+        password: ""
+        ttl: "72h"
+        traces_table_name: signoz_traces
+        metrics_table_name: signoz_metrics
+        logs_table_name: signoz_logs
+    
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, resource]
+          exporters: [clickhouse]
+        metrics:
+          receivers: [otlp, prometheus]
+          processors: [memory_limiter, batch, resource]
+          exporters: [clickhouse]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch, resource]
+          exporters: [clickhouse]
+
+# AlertManager Configuration (optional)
+alertmanager:
+  enabled: false
+
+# Ingress configuration (optional)
+ingress:
+  enabled: false
+
+# Security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: "65534"
+  fsGroup: "65534"
+
+securityContext:
+  allowPrivilegeEscalation: false
+  runAsNonRoot: true
+  runAsUser: "65534"
+  capabilities:
+    drop:
+      - ALL
