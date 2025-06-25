@@ -1,0 +1,29 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: default-tracing
+  namespace: product-service
+spec:
+  tracing:
+  - providers:
+    - name: "otel"
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: default-tracing
+  namespace: category-service
+spec:
+  tracing:
+  - providers:
+    - name: "otel"
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: default-tracing
+  namespace: review-service
+spec:
+  tracing:
+  - providers:
+    - name: "otel"

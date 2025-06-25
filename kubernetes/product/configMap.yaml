@@ -6,7 +6,7 @@ metadata:
   labels:
     app: product-service
 data:
-  CATEGORY_SERVICE_URL: "http://category-service.category-service.svc.cluster.local:3000"
+  CATEGORY_SERVICE_URL: "http://istio-ingressgateway.istio-system.svc.cluster.local/api/categories"
   DB_HOST: "mysql.product-service.svc.cluster.local"
   DB_DATABASE: "product_db"
   DB_USERNAME: "root"
