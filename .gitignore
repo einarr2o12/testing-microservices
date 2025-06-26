@@ -4,7 +4,5 @@ istio-*
 services/laravel-app/storage
 services/laravel-app/.env
 services/laravel-app/vendor
-services/laravel-app/public/storage
-services/laravel-app/public/uploads
 long.md
 prompt.md
