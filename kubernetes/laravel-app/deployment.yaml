@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: default
+  name: laravel-deployment
+  labels:
+    app: laravel-app
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: laravel-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: laravel-app
+        version: v1
+    spec:
+      containers:
+      - name: laravel-app
+        image: laravel-monolithic:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        envFrom:
+        - configMapRef:
+            name: laravel-config
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: laravel-secret
+              key: db-password
+        - name: APP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: laravel-secret
+              key: app-key
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /api/categories
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/categories
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5

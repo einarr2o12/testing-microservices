@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: laravel-project
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Laravel Monolithic Application Project
+  sourceRepos:
+  - 'https://github.com/einarr2o12/testing-microservices'
+  destinations:
+  - namespace: default
+    server: https://kubernetes.default.svc
+  - namespace: istio-system
+    server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+  - group: ''
+    kind: Namespace
+  - group: networking.istio.io
+    kind: VirtualService
+  - group: networking.istio.io
+    kind: Gateway
+  - group: networking.istio.io
+    kind: DestinationRule
+  namespaceResourceWhitelist:
+  - group: ''
+    kind: Service
+  - group: ''
+    kind: ConfigMap
+  - group: ''
+    kind: Secret
+  - group: apps
+    kind: Deployment
+  - group: apps
+    kind: StatefulSet
+  - group: networking.k8s.io
+    kind: NetworkPolicy
+  - group: networking.k8s.io
+    kind: Ingress
+  roles:
+  - name: laravel-admin
+    description: Laravel application administrator
+    policies:
+    - p, proj:laravel-project:laravel-admin, applications, *, laravel-project/*, allow
+    - p, proj:laravel-project:laravel-admin, repositories, *, *, allow
+    groups:
+    - argocd-admins

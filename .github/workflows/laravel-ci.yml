@@ -1,0 +1,138 @@
+name: Laravel CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'services/laravel-app/**'
+      - 'kubernetes/laravel-app/**'
+      - '.github/workflows/laravel-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'services/laravel-app/**'
+      - 'kubernetes/laravel-app/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/laravel-app
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: laravel_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, dom, filter, gd, iconv, json, mbstring, pdo
+
+    - name: Cache Composer packages
+      id: composer-cache
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php-
+
+    - name: Install dependencies
+      working-directory: ./services/laravel-app
+      run: composer install --prefer-dist --no-progress --no-dev
+
+    - name: Copy .env
+      working-directory: ./services/laravel-app
+      run: |
+        php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+    - name: Generate key
+      working-directory: ./services/laravel-app
+      run: php artisan key:generate
+
+    - name: Directory Permissions
+      working-directory: ./services/laravel-app
+      run: chmod -R 777 storage bootstrap/cache
+
+    - name: Create Database
+      working-directory: ./services/laravel-app
+      run: |
+        mkdir -p database
+        touch database/database.sqlite
+
+    - name: Execute tests (Unit and Feature tests) via PHPUnit
+      working-directory: ./services/laravel-app
+      env:
+        DB_CONNECTION: mysql
+        DB_HOST: 127.0.0.1
+        DB_PORT: 3306
+        DB_DATABASE: laravel_test
+        DB_USERNAME: root
+        DB_PASSWORD: password
+      run: composer run test
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/laravel-app
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+
+    - name: Update image tag in Kubernetes manifests
+      if: github.ref == 'refs/heads/main'
+      run: |
+        NEW_TAG="${{ github.sha }}"
+        sed -i "s|image: ghcr.io/${{ github.repository }}/laravel-app:.*|image: ghcr.io/${{ github.repository }}/laravel-app:main-${NEW_TAG:0:7}|g" kubernetes/laravel-app/deployment.yaml
+        
+    - name: Commit updated manifests
+      if: github.ref == 'refs/heads/main'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add kubernetes/laravel-app/deployment.yaml
+        git diff --staged --quiet || git commit -m "Update Laravel app image tag to main-${{ github.sha }}"
+        git push
