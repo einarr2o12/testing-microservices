@@ -1,7 +1,6 @@
 services/Frontend/vuejs/node_modules
 kubernetes/kong/tls*
 istio-*
-services/laravel-app/storage
 services/laravel-app/.env
 services/laravel-app/vendor
 long.md

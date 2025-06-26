@@ -62,9 +62,16 @@ jobs:
       working-directory: ./services/laravel-app
       run: php artisan key:generate
 
-    - name: Directory Permissions
+    - name: Create storage directories and set permissions
       working-directory: ./services/laravel-app
-      run: chmod -R 777 storage bootstrap/cache
+      run: |
+        mkdir -p storage/framework/cache/data
+        mkdir -p storage/framework/sessions
+        mkdir -p storage/framework/testing
+        mkdir -p storage/framework/views
+        mkdir -p storage/logs
+        mkdir -p bootstrap/cache
+        chmod -R 777 storage bootstrap/cache
 
     - name: Create Database
       working-directory: ./services/laravel-app
