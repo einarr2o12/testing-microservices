@@ -1,0 +1,88 @@
+name: Deploy to ArgoCD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'kubernetes/**'
+      - 'argocd/**'
+      - 'services/laravel-app/**'
+  workflow_dispatch:
+    inputs:
+      force_sync:
+        description: 'Force sync all applications'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  deploy-argocd:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'v1.28.0'
+
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+
+    - name: Verify cluster connection
+      run: |
+        echo "=== Cluster Info ==="
+        kubectl cluster-info
+        echo ""
+        echo "=== Nodes ==="
+        kubectl get nodes
+        echo ""
+        echo "=== ArgoCD Status ==="
+        kubectl get pods -n argocd
+
+    - name: Apply ArgoCD Project
+      run: |
+        echo "Applying ArgoCD Project..."
+        kubectl apply -f argocd/laravel-project.yaml
+
+    - name: Apply ArgoCD Applications
+      run: |
+        echo "Applying ArgoCD Applications..."
+        kubectl apply -f argocd/applications/laravel-stack.yaml
+        kubectl apply -f argocd/applications/laravel-app.yaml
+        kubectl apply -f argocd/applications/laravel-istio.yaml
+
+    - name: Wait for Applications to be Created
+      run: |
+        echo "Waiting for applications to be created..."
+        sleep 10
+        kubectl get applications -n argocd
+
+    - name: Check Application Status
+      run: |
+        echo "=== ArgoCD Applications Status ==="
+        kubectl get applications -n argocd -o wide
+        echo ""
+        echo "=== Application Health ==="
+        kubectl get applications -n argocd -o jsonpath='{range .items[*]}{.metadata.name}{": "}{.status.health.status}{" - "}{.status.sync.status}{"\n"}{end}' || echo "Applications not ready yet"
+
+    - name: Force Sync Applications
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.force_sync == 'true'
+      run: |
+        echo "Force syncing applications..."
+        kubectl patch application laravel-stack -n argocd --type='merge' -p='{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}' || echo "laravel-stack not found"
+        kubectl patch application laravel-app -n argocd --type='merge' -p='{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}' || echo "laravel-app not found"
+        kubectl patch application laravel-istio -n argocd --type='merge' -p='{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"hard"}}}' || echo "laravel-istio not found"
+
+    - name: Show Deployment Status
+      run: |
+        echo "=== Final Status ==="
+        kubectl get all -n default | grep laravel || echo "No Laravel resources found yet"
+        echo ""
+        echo "=== ArgoCD Applications ==="
+        kubectl describe applications -n argocd
