@@ -1,0 +1,54 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: signoz-tracing
+  namespace: istio-system
+spec:
+  tracing:
+  - providers:
+    - name: otel
+    randomSamplingPercentage: 100
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: signoz-tracing-workloads
+  namespace: category-service
+spec:
+  tracing:
+  - providers:
+    - name: otel
+    randomSamplingPercentage: 100
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: signoz-tracing-workloads
+  namespace: product-service
+spec:
+  tracing:
+  - providers:
+    - name: otel
+    randomSamplingPercentage: 100
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: signoz-tracing-workloads
+  namespace: review-service
+spec:
+  tracing:
+  - providers:
+    - name: otel
+    randomSamplingPercentage: 100
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: signoz-tracing-workloads
+  namespace: frontend
+spec:
+  tracing:
+  - providers:
+    - name: otel
+    randomSamplingPercentage: 100

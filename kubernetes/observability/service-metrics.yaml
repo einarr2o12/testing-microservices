@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: service-metrics-collector
+  namespace: observability
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: service-metrics-collector
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "nodes/stats", "pods", "services"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: service-metrics-collector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: service-metrics-collector
+subjects:
+- kind: ServiceAccount
+  name: service-metrics-collector
+  namespace: observability
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-metrics-config
+  namespace: observability
+data:
+  config.yaml: |
+    receivers:
+      kubeletstats:
+        collection_interval: 30s
+        auth_type: "serviceAccount"
+        endpoint: "https://${env:K8S_NODE_IP}:10250"
+        insecure_skip_verify: true
+        metric_groups:
+          - pod
+          - container
+        metrics:
+          k8s.pod.cpu.usage:
+            enabled: true
+          k8s.pod.memory.working_set:
+            enabled: true
+          k8s.pod.filesystem.usage:
+            enabled: true
+          container.cpu.usage:
+            enabled: true
+          container.memory.working_set:
+            enabled: true
+          container.filesystem.usage:
+            enabled: true
+    
+    processors:
+      filter:
+        metrics:
+          include:
+            match_type: regexp
+            metric_names:
+              - "k8s.pod.cpu.usage"
+              - "k8s.pod.memory.working_set" 
+              - "k8s.pod.filesystem.usage"
+              - "container.cpu.usage"
+              - "container.memory.working_set"
+              - "container.filesystem.usage"
+      
+      resource:
+        attributes:
+          - key: service_name
+            from_attribute: k8s.pod.name
+            action: extract
+            pattern: ^(product|category|review|frontend)-.*
+            
+      batch:
+        send_batch_size: 512
+        timeout: 5s
+    
+    exporters:
+      otlp:
+        endpoint: "signoz-otel-collector.observability.svc.cluster.local:4317"
+        tls:
+          insecure: true
+    
+    service:
+      pipelines:
+        metrics:
+          receivers: [kubeletstats]
+          processors: [filter, resource, batch]
+          exporters: [otlp]
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: service-metrics-collector
+  namespace: observability
+  labels:
+    app: service-metrics-collector
+spec:
+  selector:
+    matchLabels:
+      app: service-metrics-collector
+  template:
+    metadata:
+      labels:
+        app: service-metrics-collector
+    spec:
+      serviceAccountName: service-metrics-collector
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.111.0
+        command:
+          - "/otelcol-contrib"
+          - "--config=/etc/otelcol-contrib/config.yaml"
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: K8S_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - containerPort: 8888
+        volumeMounts:
+        - name: service-metrics-config-vol
+          mountPath: /etc/otelcol-contrib
+        resources:
+          requests:
+            memory: 64Mi
+            cpu: 50m
+          limits:
+            memory: 128Mi
+            cpu: 100m
+      volumes:
+      - name: service-metrics-config-vol
+        configMap:
+          name: service-metrics-config
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet

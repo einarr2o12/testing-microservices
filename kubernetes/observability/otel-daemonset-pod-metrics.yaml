@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-collector-node-metrics
+  namespace: observability
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-node-metrics
+rules:
+- apiGroups: [""]
+  resources: ["nodes", "nodes/proxy", "nodes/metrics", "nodes/stats"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector-node-metrics
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-collector-node-metrics
+subjects:
+- kind: ServiceAccount
+  name: otel-collector-node-metrics
+  namespace: observability
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-node-metrics-config
+  namespace: observability
+data:
+  config.yaml: |
+    receivers:
+      kubeletstats:
+        collection_interval: 30s
+        auth_type: "serviceAccount"
+        endpoint: "https://${env:K8S_NODE_IP}:10250"
+        insecure_skip_verify: true
+        metric_groups:
+          - pod
+          - container
+          - node
+    
+    processors:
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+    
+    exporters:
+      otlp:
+        endpoint: "signoz-otel-collector.observability.svc.cluster.local:4317"
+        tls:
+          insecure: true
+    
+    service:
+      pipelines:
+        metrics:
+          receivers: [kubeletstats]
+          processors: [batch]
+          exporters: [otlp]
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: otel-collector-node-metrics
+  namespace: observability
+  labels:
+    app: otel-collector-node-metrics
+spec:
+  selector:
+    matchLabels:
+      app: otel-collector-node-metrics
+  template:
+    metadata:
+      labels:
+        app: otel-collector-node-metrics
+    spec:
+      serviceAccountName: otel-collector-node-metrics
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.111.0
+        command:
+          - "/otelcol-contrib"
+          - "--config=/etc/otelcol-contrib/config.yaml"
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: K8S_NODE_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        ports:
+        - containerPort: 8888   # metrics port
+        - containerPort: 8889   # health check port
+        volumeMounts:
+        - name: otel-collector-config-vol
+          mountPath: /etc/otelcol-contrib
+        resources:
+          requests:
+            memory: 100Mi
+            cpu: 100m
+          limits:
+            memory: 200Mi
+            cpu: 200m
+      volumes:
+      - name: otel-collector-config-vol
+        configMap:
+          name: otel-collector-node-metrics-config
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
