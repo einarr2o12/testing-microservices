@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: default
+  namespace: laravel-app
   name: laravel-deployment
   labels:
     app: laravel-app
     version: v1
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: laravel-app
@@ -18,13 +18,13 @@ spec:
         app: laravel-app
         version: v1
     spec:
-      containers:
-      - name: laravel-app
-        image: laravel-monolithic:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-          name: http
+      initContainers:
+      - name: copy-laravel-files
+        image: 1911997/laravel-app:v1.1
+        command: ['sh', '-c', 'cp -r /var/www/html/* /shared/ && chown -R 82:82 /shared/storage /shared/bootstrap/cache && chmod -R 775 /shared/storage /shared/bootstrap/cache && env | grep -E "^(APP_|DB_|LOG_|SESSION_|CACHE_|QUEUE_|ENABLE_|MAX_)" | sed "s/^\\([^=]*\\)=\\(.*\\)/\\1=\"\\2\"/" > /shared/.env']
+        volumeMounts:
+        - name: laravel-files
+          mountPath: /shared
         envFrom:
         - configMapRef:
             name: laravel-config
@@ -39,22 +39,51 @@ spec:
             secretKeyRef:
               name: laravel-secret
               key: app-key
+      containers:
+      - name: laravel-app
+        image: 1911997/laravel-app:v1.1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 9000
+          name: php-fpm
+        volumeMounts:
+        - name: laravel-files
+          mountPath: /var/www/html
+        envFrom:
+        - configMapRef:
+            name: laravel-config
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: laravel-secret
+              key: db-password
+        - name: APP_KEY
+          valueFrom:
+            secretKeyRef:
+              name: laravel-secret
+              key: app-key
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/default.conf
+          subPath: default.conf
+        - name: laravel-files
+          mountPath: /var/www/html
         resources:
           limits:
-            cpu: "1"
-            memory: "1Gi"
+            cpu: "0.2"
+            memory: "256Mi"
           requests:
-            cpu: "0.5"
-            memory: "512Mi"
-        livenessProbe:
-          httpGet:
-            path: /api/categories
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/categories
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 5
+            cpu: "0.1"
+            memory: "128Mi"
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+      - name: laravel-files
+        emptyDir: {}

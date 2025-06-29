@@ -1,80 +1,52 @@
-FROM php:8.2-fpm-alpine
+# Multi-stage build for smaller image size
+FROM php:8.4-fpm-alpine AS base
 
-# Install system dependencies
+# Install system dependencies (Alpine is much smaller than Debian)
 RUN apk add --no-cache \
-    git \
-    curl \
     libpng-dev \
     oniguruma-dev \
     libxml2-dev \
+    postgresql-dev \
     zip \
     unzip \
-    nginx \
-    supervisor
+    git
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
-# Get latest Composer
+# Dependencies stage
+FROM base AS dependencies
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www/html
 
-# Create system user to run Composer and Artisan Commands
-RUN addgroup -g 1000 www && \
-    adduser -u 1000 -G www -s /bin/sh -D www
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
 
-# Set working directory
-WORKDIR /var/www
+# Install dependencies (production only, optimized)
+RUN composer install --no-dev --optimize-autoloader --no-scripts --prefer-dist
 
-# Copy existing application directory contents
-COPY . /var/www
+# Production stage
+FROM base AS production
+WORKDIR /var/www/html
 
-# Copy existing application directory permissions
-COPY --chown=www:www . /var/www
+# Copy vendor from dependencies stage
+COPY --from=dependencies /var/www/html/vendor ./vendor
 
-# Install composer dependencies
-RUN composer install --optimize-autoloader --no-dev
-
-# Configure nginx
-RUN echo 'server { \
-    listen 80; \
-    index index.php index.html; \
-    error_log  /var/log/nginx/error.log; \
-    access_log /var/log/nginx/access.log; \
-    root /var/www/public; \
-    location ~ \.php$ { \
-        try_files $uri =404; \
-        fastcgi_split_path_info ^(.+\.php)(/.+)$; \
-        fastcgi_pass 127.0.0.1:9000; \
-        fastcgi_index index.php; \
-        include fastcgi_params; \
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
-        fastcgi_param PATH_INFO $fastcgi_path_info; \
-    } \
-    location / { \
-        try_files $uri $uri/ /index.php?$query_string; \
-        gzip_static on; \
-    } \
-}' > /etc/nginx/http.d/default.conf
-
-# Configure supervisor
-RUN echo '[supervisord] \
-nodaemon=true \
-[program:php-fpm] \
-command=php-fpm \
-autostart=true \
-autorestart=true \
-[program:nginx] \
-command=nginx -g "daemon off;" \
-autostart=true \
-autorestart=true' > /etc/supervisor/conf.d/supervisord.conf
+# Copy application files
+COPY . .
 
 # Set permissions
-RUN chown -R www:www /var/www
-RUN chmod -R 755 /var/www/storage
+RUN chown -R www-data:www-data /var/www/html && \
+    chmod -R 755 /var/www/html/storage && \
+    chmod -R 755 /var/www/html/bootstrap/cache
 
-# Change current user to www
-USER www
+# Run Laravel setup
+RUN php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache
 
-# Expose port 80 and start supervisor
-EXPOSE 80
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Expose port 9000 for PHP-FPM
+EXPOSE 9000
+
+# Start PHP-FPM
+CMD ["php-fpm"]

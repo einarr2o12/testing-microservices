@@ -23,8 +23,8 @@ env:
 
   # Admin and Manager
   admin_listen: 0.0.0.0:8001
-  admin_gui_api_url: http://209.38.57.91:8001
-  admin_api_uri: http://209.38.57.91:8001
+  admin_gui_api_url: http://157.230.196.214:8001
+  admin_api_uri: http://157.230.196.214:8001
 
 proxy:
   enabled: true
